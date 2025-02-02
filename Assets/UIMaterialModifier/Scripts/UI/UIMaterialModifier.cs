@@ -8,7 +8,7 @@ namespace Dennis.UI
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    public class CustomUI : UIBehaviour, IMaterialModifier
+    public class UIMaterialModifier : UIBehaviour, IMaterialModifier
     {
         [Header("Shader Parameters")]
         [SerializeField]

@@ -1,21 +1,23 @@
 using UnityEngine;
-using UnityEditor;
-using UnityEditor.UI;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 namespace Dennis.UI
 {
-    [CustomEditor(typeof(CustomUI))]
-    public class CustomUIEditor : Editor
+
+#if UNITY_EDITOR
+
+    using UnityEditor;
+
+    [CustomEditor(typeof(UIMaterialModifier))]
+    public class UIMaterialModifierEditor : Editor
     {
         private SerializedProperty parametersProp;
-        private CustomUI customUI;
+        private UIMaterialModifier _UIMaterialModifier;
 
         private void OnEnable()
         {
             parametersProp = serializedObject.FindProperty("_parameters");
-            customUI = (CustomUI)target;
+            _UIMaterialModifier = (UIMaterialModifier)target;
         }
 
         public override void OnInspectorGUI()
@@ -119,7 +121,7 @@ namespace Dennis.UI
             if (string.IsNullOrEmpty(propertyName)) return;
 
             // Get the Material from the Graphic component
-            Material baseMaterial = customUI.GetComponent<Graphic>()?.material;
+            Material baseMaterial = _UIMaterialModifier.GetComponent<Graphic>()?.material;
             if (baseMaterial == null || !baseMaterial.HasProperty(propertyName))
             {
                 EditorGUILayout.HelpBox($"Shader does not have property '{propertyName}'", MessageType.Warning);
@@ -166,4 +168,6 @@ namespace Dennis.UI
             }
         }
     }
+
+#endif
 }

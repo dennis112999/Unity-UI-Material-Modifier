@@ -14,7 +14,7 @@ CustomUI is a Unity component that modifies UI materials dynamically. It allows 
 - 🛠️ **Inspector Customization** for easier parameter control
 - 🚀 **Supports URP & Built-in Render Pipeline**
 
-For detailed setup, usage, and advanced configurations, please refer to the [Wiki](https://github.com/dennis112999/2D-Procedural-Dungeon/wiki).
+For detailed setup, usage, and advanced configurations, please refer to the [Wiki](https://github.com/dennis112999/Unity-UI-Material-Modifier/wiki).
 
 # Unity Version
     - 2021.3.36f1 or later.

@@ -5,6 +5,9 @@
 
 CustomUI is a Unity component that modifies UI materials dynamically. It allows developers to tweak shader properties like color, saturation, and brightness without modifying shaders directly.
 
+![image](https://github.com/user-attachments/assets/ca5f1823-42db-47f9-851c-edf6a083d3d7)
+
+
 ## ✨ Features
 - 🎨 **Modify UI Shader Properties** (Color, Float, Int, Vector4)
 - 🔄 **Automatic Material Instancing** to prevent shared material issues

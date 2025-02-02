@@ -1,8 +1,8 @@
 using UnityEngine.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using System;
 using System.Collections.Generic;
+using System;
 
 namespace Dennis.UI
 {
@@ -10,13 +10,6 @@ namespace Dennis.UI
     [DisallowMultipleComponent]
     public class CustomUI : UIBehaviour, IMaterialModifier
     {
-        [System.Serializable]
-        public class ShaderParameter
-        {
-            public string propertyName;
-            public float value;
-        }
-
         [Header("Shader Parameters")]
         [SerializeField]
         private List<ShaderParameter> _parameters = new List<ShaderParameter>();
@@ -43,11 +36,23 @@ namespace Dennis.UI
         protected override void OnDisable()
         {
             base.OnDisable();
-            if (Graphic != null)
+
+            if (_materialCache != null)
             {
-                Graphic.SetMaterialDirty();
+                foreach (var material in _materialCache.Values)
+                {
+                    if (material != null)
+                    {
+                        DestroyImmediate(material);
+                    }
+                }
+                _materialCache.Clear();
+                _materialCache = null;
             }
+
+            if (Graphic != null) _graphic.SetMaterialDirty();
         }
+
 
 #if UNITY_EDITOR
         protected override void OnValidate()
@@ -55,25 +60,14 @@ namespace Dennis.UI
             base.OnValidate();
             if (!IsActive() || Graphic == null)
             {
-                Debug.LogError($"[CustomUI] Invalid state: IsActive={IsActive()} Graphic={Graphic}");
-                return;
-            }
-            Graphic.SetMaterialDirty();
-        }
-#endif
-
-        protected override void OnDidApplyAnimationProperties()
-        {
-            base.OnDidApplyAnimationProperties();
-            if (!IsActive() || Graphic == null)
-            {
 #if UNITY_EDITOR
-                Debug.LogError($"[CustomUI] Animation properties applied but component is not active on {gameObject.name}");
+                Debug.LogError($"[CustomUI] Invalid state: IsActive={IsActive()} Graphic={Graphic}");
 #endif
                 return;
             }
             Graphic.SetMaterialDirty();
         }
+#endif
 
         public Material GetModifiedMaterial(Material baseMaterial)
         {
@@ -93,39 +87,40 @@ namespace Dennis.UI
                 return null;
             }
 
-            if (!_materialCache.TryGetValue(baseMaterial, out var modifiedMaterial))
+            // Do not share materials;
+            // Each Graphic should have its own independent instance.
+            Material modifiedMaterial = new Material(baseMaterial)
             {
-                modifiedMaterial = new Material(baseMaterial)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
-                _materialCache[baseMaterial] = modifiedMaterial;
-            }
+                hideFlags = HideFlags.HideAndDontSave
+            };
 
             modifiedMaterial.CopyPropertiesFromMaterial(baseMaterial);
 
             foreach (var param in _parameters)
             {
-                if (string.IsNullOrEmpty(param.propertyName))
-                {
-#if UNITY_EDITOR
-                    Debug.LogError($"[CustomUI] Shader property name is empty in {gameObject.name}");
-#endif
-                    continue;
-                }
+                if (string.IsNullOrEmpty(param.PropertyName)) continue;
 
-                if (!baseMaterial.HasProperty(param.propertyName))
-                {
-#if UNITY_EDITOR
-                    Debug.LogError($"[CustomUI] Shader does not have property '{param.propertyName}' on {gameObject.name}");
-#endif
-                    continue;
-                }
+                if (!baseMaterial.HasProperty(param.PropertyName)) continue;
 
-                modifiedMaterial.SetFloat(param.propertyName, param.value);
+                switch (param.ParameterType)
+                {
+                    case ShaderParameterType.Float:
+                        modifiedMaterial.SetFloat(param.PropertyName, param.FloatValue);
+                        break;
+                    case ShaderParameterType.Int:
+                        modifiedMaterial.SetInt(param.PropertyName, param.IntValue);
+                        break;
+                    case ShaderParameterType.Color:
+                        modifiedMaterial.SetColor(param.PropertyName, param.ColorValue);
+                        break;
+                    case ShaderParameterType.Vector4:
+                        modifiedMaterial.SetVector(param.PropertyName, param.VectorValue);
+                        break;
+                }
             }
 
             return modifiedMaterial;
         }
+
     }
 }

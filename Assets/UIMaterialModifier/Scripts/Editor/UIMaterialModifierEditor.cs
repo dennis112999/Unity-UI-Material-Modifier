@@ -37,7 +37,9 @@ namespace Dennis.UI
 
             if (GUILayout.Button("Add Shader Parameter"))
             {
+                serializedObject.Update();
                 parametersProp.arraySize++;
+                serializedObject.ApplyModifiedProperties();
             }
 
             DrawShaderParameters();
@@ -58,30 +60,46 @@ namespace Dennis.UI
         {
             EditorGUILayout.BeginVertical("box");
 
-            DrawParameterHeader(index);
+            // Draw parameter header (includes Remove button)
+            if (DrawParameterHeader(index))
+            {
+                return; // Exit if the parameter was removed
+            }
+
+            // Ensure parameter still exists before accessing it
+            if (index >= parametersProp.arraySize) return;
 
             SerializedProperty propertyName = param.FindPropertyRelative("PropertyName");
             SerializedProperty type = param.FindPropertyRelative("ParameterType");
 
             DrawPropertyNameAndType(propertyName, type);
 
-            CheckShaderPropertyType(propertyName.stringValue, (ShaderParameterType)type.enumValueIndex);
-
-            DrawParameterValueFields(param, (ShaderParameterType)type.enumValueIndex);
+            // Only proceed if the shader property is valid
+            if (CheckShaderPropertyType(propertyName.stringValue, (ShaderParameterType)type.enumValueIndex))
+            {
+                DrawParameterValueFields(param, (ShaderParameterType)type.enumValueIndex);
+            }
 
             EditorGUILayout.EndVertical();
         }
 
-        private void DrawParameterHeader(int index)
+
+        private bool DrawParameterHeader(int index)
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField($"Parameter {index + 1}", EditorStyles.boldLabel);
+
             if (GUILayout.Button("Remove", GUILayout.Width(70)))
             {
+                serializedObject.Update();
                 parametersProp.DeleteArrayElementAtIndex(index);
-                return;
+                serializedObject.ApplyModifiedProperties();
+
+                return true;
             }
+
             EditorGUILayout.EndHorizontal();
+            return false;
         }
 
         private void DrawPropertyNameAndType(SerializedProperty propertyName, SerializedProperty type)
@@ -125,22 +143,26 @@ namespace Dennis.UI
         }
 
 
-        private void CheckShaderPropertyType(string propertyName, ShaderParameterType selectedType)
+        /// <summary>
+        /// Checks if the selected shader property type matches the actual shader property.
+        /// Returns `false` if there's a mismatch or the property does not exist.
+        /// </summary>
+        private bool CheckShaderPropertyType(string propertyName, ShaderParameterType selectedType)
         {
-            if (string.IsNullOrEmpty(propertyName)) return;
+            if (string.IsNullOrEmpty(propertyName)) return false;
 
             // Get the Material from the Graphic component
             Material baseMaterial = _UIMaterialModifier.GetComponent<Graphic>()?.material;
             if (baseMaterial == null || !baseMaterial.HasProperty(propertyName))
             {
                 EditorGUILayout.HelpBox($"Shader does not have property '{propertyName}'", MessageType.Warning);
-                return;
+                return false;
             }
 
             // Get the Shader property type
             Shader shader = baseMaterial.shader;
             int propertyIndex = shader.FindPropertyIndex(propertyName);
-            if (propertyIndex == -1) return;
+            if (propertyIndex == -1) return false;
 
             // Determine if the type matches
             ShaderUtil.ShaderPropertyType propertyType = ShaderUtil.GetPropertyType(shader, propertyIndex);
@@ -174,8 +196,12 @@ namespace Dennis.UI
             if (typeMismatch)
             {
                 EditorGUILayout.HelpBox($"Shader property '{propertyName}' is expected to be {expectedType}, but you assigned {selectedTypeStr}.", MessageType.Warning);
+                return false;
             }
+
+            return true;
         }
+
     }
 
 #endif

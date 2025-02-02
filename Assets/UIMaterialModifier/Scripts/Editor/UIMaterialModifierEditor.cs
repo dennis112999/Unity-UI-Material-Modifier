@@ -22,6 +22,15 @@ namespace Dennis.UI
 
         public override void OnInspectorGUI()
         {
+            GUILayout.Label("Click here to visit wiki!", EditorStyles.linkLabel);
+            Rect rect = GUILayoutUtility.GetLastRect();
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
+            Event currentEvent = Event.current;
+            if (currentEvent.type == EventType.MouseDown && rect.Contains(currentEvent.mousePosition))
+            {
+                Help.BrowseURL("https://github.com/dennis112999/Unity-UI-Material-Modifier/wiki");
+            }
+
             serializedObject.Update();
 
             EditorGUILayout.LabelField("Shader Parameters", EditorStyles.boldLabel);
